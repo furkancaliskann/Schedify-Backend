@@ -1,8 +1,7 @@
 ﻿using Business.Abstract;
 using Business.Dtos;
-using Business.Exceptions;
-using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using DataAccess.Pagination;
 
 namespace Web_API.Controllers
 {
@@ -18,9 +17,9 @@ namespace Web_API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTodos()
+        public async Task<IActionResult> GetTodos([FromQuery] PaginationQuery paginationQuery)
         {
-            var todos = await _todoService.GetAllAsync();
+            var todos = await _todoService.GetAllAsync(paginationQuery);
             return Ok(todos);
         }
 

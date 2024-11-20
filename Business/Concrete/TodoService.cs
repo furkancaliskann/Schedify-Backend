@@ -5,6 +5,7 @@ using Business.Exceptions;
 using DataAccess.Abstract;
 using Entities.Concrete;
 using FluentValidation;
+using DataAccess.Pagination;
 
 public class TodoService : ITodoService
 {
@@ -22,9 +23,9 @@ public class TodoService : ITodoService
         _updateTodoValidator = updateTodoValidator;
     }
 
-    public async Task<IEnumerable<Todo>> GetAllAsync()
+    public async Task<PagedResponse<Todo>> GetAllAsync(PaginationQuery paginationQuery)
     {
-        return await _todoRepository.GetAllAsync();
+        return await _todoRepository.GetAllAsync(paginationQuery);
     }
 
     public async Task<Todo> GetByIdAsync(int id)

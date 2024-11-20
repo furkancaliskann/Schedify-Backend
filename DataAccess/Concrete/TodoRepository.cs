@@ -1,12 +1,7 @@
 ﻿using DataAccess.Abstract;
-using Entities.Abstract;
+using DataAccess.Pagination;
 using Entities.Concrete;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataAccess.Concrete
 {
@@ -36,9 +31,42 @@ namespace DataAccess.Concrete
             }
         }
 
-        public async Task<IEnumerable<Todo>> GetAllAsync()
+        public async Task<PagedResponse<Todo>> GetAllAsync(PaginationQuery paginationQuery)
         {
-            return await _context.Todos.ToListAsync();
+            var todosQuery = _context.Todos.AsQueryable();
+
+            if (!string.IsNullOrEmpty(paginationQuery.SearchTerm))
+            {
+                var searchTerm = paginationQuery.SearchTerm.ToLower();
+
+                todosQuery = todosQuery.Where(x =>
+                    EF.Functions.Like(x.Title.ToLower(), $"%{searchTerm}%"));
+            }
+
+            if (!string.IsNullOrEmpty(paginationQuery.SortBy))
+            {
+                var normalizedSortBy = char.ToUpper(paginationQuery.SortBy[0]) + paginationQuery.SortBy.Substring(1).ToLower();
+                todosQuery = paginationQuery.SortDirection?.ToLower() switch
+                {
+                    "asc" => todosQuery.OrderBy(x => EF.Property<object>(x, normalizedSortBy)),
+                    "desc" => todosQuery.OrderByDescending(x => EF.Property<object>(x, normalizedSortBy)),
+                    _ => todosQuery
+                };
+            }
+
+            var totalCount = await todosQuery.CountAsync();
+            var items = await todosQuery
+            .Skip((paginationQuery.PageNumber - 1) * paginationQuery.PageSize)
+                .Take(paginationQuery.PageSize)
+                .ToListAsync();
+
+            return new PagedResponse<Todo>
+            {
+                Data = items,
+                TotalCount = totalCount,
+                PageNumber = paginationQuery.PageNumber,
+                PageSize = paginationQuery.PageSize
+            };
         }
 
         public async Task<Todo?> GetByIdAsync(int id)
