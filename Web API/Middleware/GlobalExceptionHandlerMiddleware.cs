@@ -1,7 +1,7 @@
 ﻿using Business.Exceptions;
 using FluentValidation;
+using Serilog;
 using System.Text.Json;
-using System;
 
 public class GlobalExceptionHandlerMiddleware
 {
@@ -19,6 +19,7 @@ public class GlobalExceptionHandlerMiddleware
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "An error occurred: {Message}", ex.Message);
 
             context.Response.ContentType = "application/json";
 

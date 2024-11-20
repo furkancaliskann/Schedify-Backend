@@ -2,6 +2,7 @@ using Business.Dependency_Injection;
 using DataAccess.Concrete;
 using DataAccess.Dependency_Injection;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,17 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDataAccessServices();
 builder.Services.AddBusinessServices();
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Error()
+    .WriteTo.Console(outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}")
+    .WriteTo.File("logs/Schedify-Backend.txt", rollingInterval: RollingInterval.Day, outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}")
+    .CreateLogger();
+
+builder.Services.AddLogging(loggingBuilder =>
+{
+    loggingBuilder.AddSerilog();
+});
 
 var app = builder.Build();
 
