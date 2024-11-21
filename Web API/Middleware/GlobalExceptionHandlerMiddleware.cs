@@ -31,6 +31,9 @@ public class GlobalExceptionHandlerMiddleware
                 case ValidationException:
                     context.Response.StatusCode = StatusCodes.Status400BadRequest;
                     break;
+                case UnauthorizedAccessException:
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    break;
                 default:
                     context.Response.StatusCode = StatusCodes.Status500InternalServerError;
                     break;

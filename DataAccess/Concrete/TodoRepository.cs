@@ -31,10 +31,11 @@ namespace DataAccess.Concrete
             }
         }
 
-        public async Task<PagedResponse<Todo>> GetAllAsync(PaginationQuery paginationQuery)
+        public async Task<PagedResponse<Todo>> GetAllAsync(string userId, PaginationQuery paginationQuery)
         {
-            var todosQuery = _context.Todos.AsQueryable();
+            var todosQuery = _context.Todos.Where(x => x.CreatedUserId == userId).AsQueryable(); // UserId'ye göre filtreleme
 
+            // Arama (Search)
             if (!string.IsNullOrEmpty(paginationQuery.SearchTerm))
             {
                 var searchTerm = paginationQuery.SearchTerm.ToLower();
@@ -43,6 +44,7 @@ namespace DataAccess.Concrete
                     EF.Functions.Like(x.Title.ToLower(), $"%{searchTerm}%"));
             }
 
+            // Sıralama (Sorting)
             if (!string.IsNullOrEmpty(paginationQuery.SortBy))
             {
                 var normalizedSortBy = char.ToUpper(paginationQuery.SortBy[0]) + paginationQuery.SortBy.Substring(1).ToLower();
@@ -54,12 +56,17 @@ namespace DataAccess.Concrete
                 };
             }
 
+            // Toplam Sayı Hesaplama
             var totalCount = await todosQuery.CountAsync();
+
+            // Verileri Çekme (Pagination)
             var items = await todosQuery
-            .Skip((paginationQuery.PageNumber - 1) * paginationQuery.PageSize)
+                .Include(t => t.CreatedUser) // İlişkili kullanıcıyı dahil etme
+                .Skip((paginationQuery.PageNumber - 1) * paginationQuery.PageSize)
                 .Take(paginationQuery.PageSize)
                 .ToListAsync();
 
+            // Sonuçları Döndürme
             return new PagedResponse<Todo>
             {
                 Data = items,
@@ -71,7 +78,7 @@ namespace DataAccess.Concrete
 
         public async Task<Todo?> GetByIdAsync(int id)
         {
-            return await _context.Todos.FindAsync(id);
+            return await _context.Todos.Include(t => t.CreatedUser).FirstOrDefaultAsync(t => t.Id == id);
         }
 
         public async Task UpdateAsync(Todo entity)
