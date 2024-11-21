@@ -15,5 +15,15 @@ namespace DataAccess.Concrete
         public SchedifyContext(DbContextOptions<SchedifyContext> options): base(options) { }
 
         public DbSet<Todo> Todos { get; set; }
+        public DbSet<User> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Todo>()
+                .HasOne(t => t.CreatedUser)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }

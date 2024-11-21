@@ -9,6 +9,7 @@ namespace DataAccess.Dependency_Injection
         public static IServiceCollection AddDataAccessServices(this IServiceCollection services)
         {
             services.AddScoped<ITodoRepository, TodoRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
             return services;
         }
     }

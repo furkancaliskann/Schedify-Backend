@@ -23,23 +23,29 @@ public class TodoService : ITodoService
         _updateTodoValidator = updateTodoValidator;
     }
 
-    public async Task<PagedResponse<Todo>> GetAllAsync(PaginationQuery paginationQuery)
+    public async Task<PagedResponse<Todo>> GetAllAsync(string userId, PaginationQuery paginationQuery)
     {
-        return await _todoRepository.GetAllAsync(paginationQuery);
+        return await _todoRepository.GetAllAsync(userId, paginationQuery);
     }
 
-    public async Task<Todo> GetByIdAsync(int id)
+    public async Task<Todo> GetByIdAsync(string userId, int id)
     {
         var todo = await _todoRepository.GetByIdAsync(id);
-        if (todo is null)
+
+        if (todo == null)
         {
             throw new NotFoundException("Todo not found!");
         }
-            
+
+        if (todo.CreatedUserId != userId)
+        {
+            throw new UnauthorizedAccessException("You do not have permission to view this todo!");
+        }
+
         return todo;
     }
 
-    public async Task AddAsync(CreateTodoDto entity)
+    public async Task AddAsync(CreateTodoDto entity, string userId)
     {
         var validationResult = _createTodoValidator.Validate(entity);
         if (!validationResult.IsValid)
@@ -50,10 +56,11 @@ public class TodoService : ITodoService
         var todo = _mapper.Map<Todo>(entity);
         todo.CreatedAt = DateTime.UtcNow;
         todo.UpdatedAt = DateTime.UtcNow;
+        todo.CreatedUserId = userId;
         await _todoRepository.AddAsync(todo);
     }
 
-    public async Task UpdateAsync(int id, UpdateTodoDto updateTodoDto)
+    public async Task UpdateAsync(string userId, int todoId, UpdateTodoDto updateTodoDto)
     {
         var validationResult = _updateTodoValidator.Validate(updateTodoDto);
         if (!validationResult.IsValid)
@@ -61,19 +68,36 @@ public class TodoService : ITodoService
             throw new ValidationException(validationResult.Errors);
         }
 
-        var todo = await GetByIdAsync(id);
+        var todo = await _todoRepository.GetByIdAsync(todoId);
+
+        if (todo == null)
+        {
+            throw new NotFoundException("Todo not found!");
+        }
+
+        if (todo.CreatedUserId != userId)
+        {
+            throw new UnauthorizedAccessException("You do not have permission to update this todo!");
+        }
+
         _mapper.Map(updateTodoDto, todo);
         todo.UpdatedAt = DateTime.UtcNow;
+
         await _todoRepository.UpdateAsync(todo);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(string userId, int id)
     {
-        var todo = await GetByIdAsync(id);
+        var todo = await _todoRepository.GetByIdAsync(id);
+
         if (todo is null)
         {
             throw new NotFoundException("Todo not found!");
         }
+
+        if(todo.CreatedUserId != userId)
+            throw new UnauthorizedAccessException("You do not have permission to delete this todo!");
+
         await _todoRepository.DeleteAsync(id);
     }
 }
