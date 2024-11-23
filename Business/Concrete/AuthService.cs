@@ -43,7 +43,7 @@ namespace Business.Concrete
         {
             var settings = new GoogleJsonWebSignature.ValidationSettings
             {
-                Audience = [_configuration["Jwt:Audience"]]
+                Audience = [_configuration["OAuth:ClientId"]]
             };
 
             return await GoogleJsonWebSignature.ValidateAsync(idToken, settings);

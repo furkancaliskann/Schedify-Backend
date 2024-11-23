@@ -31,7 +31,7 @@ namespace Web_API.Controllers
             return Redirect(googleAuthUrl);
         }
 
-        [HttpGet("google/callback")]
+        /*[HttpGet("google/callback")]
         public async Task<IActionResult> GoogleCallback(string code, string state)
         {
             var clientId = _configuration["OAuth:ClientId"];
@@ -63,6 +63,20 @@ namespace Web_API.Controllers
             var jwt = await _authService.AuthenticateGoogleUser(idToken);
 
             return Ok(new { token = jwt });
+        }*/
+
+        [HttpPost("google/callback")]
+        public async Task<IActionResult> GoogleCallback([FromBody] GoogleTokenResponse request)
+        {
+            try
+            {
+                var jwt = await _authService.AuthenticateGoogleUser(request.IdToken); // Sadece idToken kullanılır
+                return Ok(new { token = jwt });
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized(new { error = ex.Message });
+            }
         }
 
         public class GoogleTokenResponse
